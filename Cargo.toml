@@ -1,0 +1,10 @@
+[package]
+name = "unlha-uae"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+delharc = "0.6"
+#percent-encoding = "2.3"
+clap = "4.5"
+anyhow = "1.0"
