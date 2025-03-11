@@ -1,27 +1,20 @@
-mod amiberry;
 mod arguments;
 mod emutrait;
 mod fileinfo;
+mod amiberry;
 mod noemu;
-use amiberry::Amiberry;
-use delharc::parse_file;
-use noemu::NoEmu;
-use std::fs::{create_dir_all, File};
-use std::io::copy;
-use std::path::{Path, PathBuf};
-//use anyhow::Result;
-use arguments::get_arg_matches;
 use emutrait::Emu;
-use fileinfo::parse_file_info;
+use std::fs::{create_dir_all, File};
+use std::io::{copy, Result};
+use std::path::{Path, PathBuf};
+use delharc::OsType;
 
-const OS_TYPE_AMIGA: u8 = 0x41;
-
-fn uncompress(lha_file: &Path, mut emu: impl Emu) -> std::io::Result<()> {
-    let mut lha_reader = parse_file(lha_file)?;
+fn uncompress(lha_file: &Path, mut emu: impl Emu) -> Result<()> {
+    let mut lha_reader = delharc::parse_file(lha_file)?;
 
     loop {
         let header = lha_reader.header();
-        let info = parse_file_info(header)?;
+        let info = fileinfo::parse_file_info(header)?;
         let path = emu.get_host_path(&info);
 
         if header.is_directory() || info.is_directory {
@@ -31,7 +24,7 @@ fn uncompress(lha_file: &Path, mut emu: impl Emu) -> std::io::Result<()> {
             if !directory.is_dir() {
                 create_dir_all(directory)?;
             };
-            if header.os_type == OS_TYPE_AMIGA || header.level == 0 {
+            if header.parse_os_type() == Ok(OsType::Amiga) || header.level == 0 {
                 emu.write_metadata(&info)?;
             };
             let mut writer = File::create(path)?;
@@ -48,8 +41,8 @@ fn uncompress(lha_file: &Path, mut emu: impl Emu) -> std::io::Result<()> {
     Ok(())
 }
 
-fn main() -> std::io::Result<()> {
-    let matches = get_arg_matches();
+fn main() -> Result<()> {
+    let matches = arguments::get_arg_matches();
     let source = matches.get_one::<PathBuf>("source").unwrap();
     let target = matches.get_one::<PathBuf>("target").unwrap();
 
@@ -60,10 +53,10 @@ fn main() -> std::io::Result<()> {
     );
 
     if matches.get_flag("amiberry") {
-        uncompress(source, Amiberry::new(target))
+        uncompress(source, amiberry::Amiberry::new(target))
     } else if matches.get_flag("fsuae") {
         unimplemented!()
     } else {
-        uncompress(source, NoEmu::new(target))
+        uncompress(source, noemu::NoEmu::new(target))
     }
 }

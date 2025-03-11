@@ -1,10 +1,9 @@
-use crate::emutrait::Emu;
-use crate::fileinfo::FileInfo;
 use std::collections::HashMap;
 use std::ffi::OsString;
-use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use crate::fileinfo::FileInfo;
+use crate::emutrait::Emu;
 
 const UAEFSDB_NAME: &str = "_UAEFSDB.___";
 
@@ -37,7 +36,7 @@ impl Emu for Amiberry {
         let nname_db = Self::make_string(aname);
         let nname_fs = self.get_host_path(info);
 
-        let mut db = OpenOptions::new()
+        let mut db = std::fs::OpenOptions::new()
             .append(true)
             .create(true)
             .truncate(false)
