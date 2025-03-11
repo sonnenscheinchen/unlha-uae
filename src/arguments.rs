@@ -1,4 +1,5 @@
 use clap::{value_parser, Arg, ArgAction, ArgMatches, Command};
+use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
 
 pub fn get_arg_matches() -> ArgMatches {
@@ -42,6 +43,21 @@ pub fn get_arg_matches() -> ArgMatches {
         .get_matches()
 }
 
-fn create_dir(s: &str) -> Result<PathBuf, std::io::Error> {
-    std::fs::create_dir_all(s).and(Ok(PathBuf::from(s)))
+fn create_dir(s: &str) -> Result<PathBuf, Error> {
+    let path = PathBuf::from(s);
+    match std::fs::read_dir(s) {
+        Ok(mut entries) => {
+            if entries.next().is_none() {
+                Ok(path)
+            } else {
+                Err(Error::from(ErrorKind::DirectoryNotEmpty))
+            }
+        }
+        Err(err) => match err.kind() {
+            ErrorKind::NotFound => {
+                std::fs::create_dir_all(&path).map(|_| path)
+            }
+            _ => Err(err),
+        },
+    }
 }

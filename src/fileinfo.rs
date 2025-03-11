@@ -1,6 +1,5 @@
 use delharc::header::ext::{EXT_HEADER_FILENAME, EXT_HEADER_PATH};
 use delharc::LhaHeader;
-use std::fmt::Display;
 use std::io::{Error, ErrorKind, Result};
 
 // https://web.archive.org/web/20080724142842/http://homepage1.nifty.com/dangan/en/Content/Program/Java/jLHA/Notes/Notes.html
