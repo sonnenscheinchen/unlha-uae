@@ -1,10 +1,22 @@
-use delharc::LhaHeader;
 use delharc::header::ext::{EXT_HEADER_FILENAME, EXT_HEADER_PATH};
+use delharc::LhaHeader;
+use std::fmt::Display;
 use std::io::{Error, ErrorKind, Result};
 
 // https://web.archive.org/web/20080724142842/http://homepage1.nifty.com/dangan/en/Content/Program/Java/jLHA/Notes/Notes.html
 const EXT_HEADER_LV2_COMMENT: u8 = 0x71; // undocumented!
 const PATH_SEPARATOR: u8 = 0xff;
+
+const DEFAULT_FLAGS: [(char, u16); 8] = [
+    ('h', 1 << 7),
+    ('s', 1 << 6),
+    ('p', 1 << 5),
+    ('a', 1 << 4),
+    ('r', 1 << 3),
+    ('w', 1 << 2),
+    ('e', 1 << 1),
+    ('d', 1 << 0),
+];
 
 #[derive(Debug)]
 pub struct FileInfo<'a> {
@@ -33,7 +45,6 @@ fn parse_level0(header: &LhaHeader) -> Result<FileInfo> {
 
 // the most common (default) header created by Amiga lha 2.15
 fn parse_level1(header: &LhaHeader) -> Result<FileInfo> {
-    dbg!(header);
     let mut split = header.filename.split(|b| *b == 0);
     let amiga_file_name = split.next().unwrap();
     let is_directory = if amiga_file_name.is_empty() {
@@ -97,5 +108,21 @@ pub fn parse_file_info(header: &LhaHeader) -> Result<FileInfo> {
             ErrorKind::Unsupported,
             "Unsupported LHA header level.",
         )),
+    }
+}
+
+impl<'a> FileInfo<'a> {
+    pub fn get_flags(&self) -> String {
+        let bits = self.protection_bits ^ 0b00001111;
+        DEFAULT_FLAGS
+            .iter()
+            .map(|flag| if bits & flag.1 == 0 { '-' } else { flag.0 })
+            .collect()
+    }
+    pub fn get_comment(&self) -> String {
+        // FIXME: should be same as make_string()
+        self.comment.map_or(String::new(), |bytes| {
+            bytes.iter().map(|byte| *byte as char).collect()
+        })
     }
 }

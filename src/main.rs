@@ -18,7 +18,8 @@ fn uncompress(lha_file: &Path, mut emu: impl Emu) -> Result<()> {
         let path = emu.get_host_path(&info);
 
         if header.is_directory() || info.is_directory {
-            create_dir_all(path)?;
+            println!("[D] {} {} {}", info.get_flags(), info.get_comment(), path.display());
+            create_dir_all(&path)?;
         } else if lha_reader.is_decoder_supported() {
             let directory = path.parent().unwrap();
             if !directory.is_dir() {
@@ -27,7 +28,8 @@ fn uncompress(lha_file: &Path, mut emu: impl Emu) -> Result<()> {
             if header.parse_os_type() == Ok(OsType::Amiga) || header.level == 0 {
                 emu.write_metadata(&info)?;
             };
-            let mut writer = File::create(path)?;
+            println!("[F] {} {} {}", info.get_flags(), info.get_comment(), path.display());
+            let mut writer = File::create(&path)?;
             copy(&mut lha_reader, &mut writer)?;
             lha_reader.crc_check()?;
         } else {
