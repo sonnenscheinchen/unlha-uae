@@ -1,5 +1,7 @@
 use crate::emutrait::Emu;
 use crate::fileinfo::FileInfo;
+use std::collections::HashMap;
+use std::ffi::OsString;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -8,25 +10,26 @@ const UAEFSDB_NAME: &str = "_UAEFSDB.___";
 
 pub struct Amiberry {
     target_dir: PathBuf,
+    dir_cache: HashMap<OsString, PathBuf>
 }
 
 impl Amiberry {
     pub fn new(path: &Path) -> Self {
         Self {
             target_dir: path.to_owned(),
+            dir_cache: HashMap::new(),
         }
     }
 }
 
 impl Emu for Amiberry {
-    fn get_host_path(&self, info: &FileInfo) -> PathBuf {
-        let mut result = self.target_dir.clone();
-        info.path_components.iter().for_each(|comp|
-            result.push(Self::make_string(comp)));
-        result
+    fn get_target_dir(&self) -> PathBuf {
+        self.target_dir.clone()
     }
-
-    fn write_metadata(&self, info: &FileInfo) -> std::io::Result<()> {
+    fn get_dir_cache(&mut self) -> &mut HashMap<OsString, PathBuf> {
+        &mut self.dir_cache
+    }
+    fn write_metadata(&mut self, info: &FileInfo) -> std::io::Result<()> {
         if !Self::needs_metadata(info) {
             return Ok(());
         };

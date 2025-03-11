@@ -16,7 +16,7 @@ use fileinfo::parse_file_info;
 
 const OS_TYPE_AMIGA: u8 = 0x41;
 
-fn uncompress(lha_file: &Path, emu: impl Emu) -> std::io::Result<()> {
+fn uncompress(lha_file: &Path, mut emu: impl Emu) -> std::io::Result<()> {
     let mut lha_reader = parse_file(lha_file)?;
 
     loop {
