@@ -2,7 +2,6 @@ use crate::fileinfo::FileInfo;
 use std::collections::HashMap;
 use std::ffi::OsString;
 use std::io::Result;
-use std::ops::Not;
 use std::path::PathBuf;
 
 // static TCHAR evilchars[NUM_EVILCHARS] = { '%', '\\', '*', '?', '\"', '/', '|', '<', '>' };
@@ -13,26 +12,18 @@ pub trait Emu {
     fn get_target_dir(&self) -> PathBuf;
     fn get_dir_cache(&mut self) -> &mut HashMap<OsString, PathBuf>;
     fn get_host_path(&mut self, info: &FileInfo) -> PathBuf {
-        let mut result = Self::get_target_dir(self);
         let mut path = PathBuf::new();
-        let mut iter = info.path_components.iter();
-        let file_name = info
-            .is_directory
-            .not()
-            .then_some(Self::make_string(iter.next_back().unwrap()));
-        iter.for_each(|comp| path.push(Self::make_string(comp)));
         let dir_cache = Self::get_dir_cache(self);
-        let path_inner = path.as_os_str().to_ascii_lowercase();
-        if let Some(cached) = dir_cache.get(&path_inner) {
-            result.push(cached);
-        } else {
-            dir_cache.insert(path_inner, path.clone());
-            result.push(path);
+        for comp in info.path_components.iter() {
+            path.push(Self::make_string(comp));
+            let path_inner = path.as_os_str().to_ascii_lowercase();
+            if let Some(cached) = dir_cache.get(&path_inner) {
+                path = cached.clone();
+            } else {
+                dir_cache.insert(path_inner, path.clone());
+            }
         }
-        if let Some(name) = file_name {
-            result.push(name);
-        }
-        result
+        Self::get_target_dir(self).join(path)
     }
     fn write_metadata(&mut self, info: &FileInfo) -> Result<()>;
     fn make_string(slice: &[u8]) -> String {
