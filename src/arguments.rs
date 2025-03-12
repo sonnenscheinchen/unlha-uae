@@ -5,11 +5,10 @@ use std::path::PathBuf;
 pub fn get_arg_matches() -> ArgMatches {
     Command::new("unlha-uae")
         .about("LHA archive unpacker targeting Amiga emulators")
-        .version("0.1.0")
+        .version("0.2.0")
         .arg(
             Arg::new("source")
                 .help("The lha file to unpack")
-                //.value_name("IMAGE/DIRECTORY")
                 .index(1)
                 .required(true)
                 .value_parser(value_parser!(PathBuf))
@@ -18,7 +17,6 @@ pub fn get_arg_matches() -> ArgMatches {
         .arg(
             Arg::new("target")
                 .help("The target directory to extract to (will be created)")
-                //.value_name("IMAGE/DIRECTORY")
                 .index(2)
                 .required(true)
                 .value_parser(create_dir)
@@ -30,6 +28,7 @@ pub fn get_arg_matches() -> ArgMatches {
                 .action(ArgAction::SetTrue)
                 .short('f')
                 .long("fsuae")
+                .conflicts_with("amiberry")
                 .display_order(100),
         )
         .arg(
@@ -38,6 +37,7 @@ pub fn get_arg_matches() -> ArgMatches {
                 .action(ArgAction::SetTrue)
                 .short('a')
                 .long("amiberry")
+                .conflicts_with("fsuae")
                 .display_order(110),
         )
         .get_matches()
@@ -54,9 +54,7 @@ fn create_dir(s: &str) -> Result<PathBuf, Error> {
             }
         }
         Err(err) => match err.kind() {
-            ErrorKind::NotFound => {
-                std::fs::create_dir_all(&path).map(|_| path)
-            }
+            ErrorKind::NotFound => std::fs::create_dir_all(&path).map(|_| path),
             _ => Err(err),
         },
     }

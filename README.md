@@ -1,6 +1,5 @@
 # About
 Using directories as emulated hard drives in *uae is really convenient. Get your Amiga stuff from Aminet, scene.org or pouet and use 7zip or whatever tool the extract. Easy. Well not always. If you follow the Amiga community you find some people saying "Never unpack LHA files on the PeeCee. You will run into issues." Hm, the situation isn't that bad. Most file will unpack just fine with regular tools but not all. `unlha-uae` ~~will~~ tries to unpack all files correctly, ready to use with your favourite Amiga emulator.
-Note: Currently FS-UAE is not supported yet.
 
 # How to build
 Install `rust` and `cargo` and clone the repo.

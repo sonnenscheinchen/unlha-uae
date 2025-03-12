@@ -1,4 +1,5 @@
 use delharc::header::ext::{EXT_HEADER_FILENAME, EXT_HEADER_PATH};
+use delharc::header::TimestampResult;
 use delharc::LhaHeader;
 use std::io::{Error, ErrorKind, Result};
 
@@ -23,6 +24,7 @@ pub struct FileInfo<'a> {
     pub comment: Option<&'a [u8]>,
     pub protection_bits: u16,
     pub is_directory: bool,
+    pub timestamp: TimestampResult,
 }
 
 // old MS-DOS compatible header created with Amiga "lha -H0"
@@ -39,6 +41,7 @@ fn parse_level0(header: &LhaHeader) -> Result<FileInfo> {
         comment,
         protection_bits: header.msdos_attrs.bits(),
         is_directory: header.filename.last().unwrap() == &0x5c,
+        timestamp: header.parse_last_modified(),
     })
 }
 
@@ -69,6 +72,7 @@ fn parse_level1(header: &LhaHeader) -> Result<FileInfo> {
         comment,
         protection_bits: header.msdos_attrs.bits(),
         is_directory,
+        timestamp: header.parse_last_modified(),
     })
 }
 
@@ -96,6 +100,7 @@ fn parse_level2(header: &LhaHeader) -> Result<FileInfo> {
         comment,
         protection_bits: header.msdos_attrs.bits(),
         is_directory: amiga_file_name.is_none(),
+        timestamp: header.parse_last_modified(),
     })
 }
 pub fn parse_file_info(header: &LhaHeader) -> Result<FileInfo> {
@@ -123,6 +128,13 @@ impl<'a> FileInfo<'a> {
         self.comment.map_or(String::new(), |bytes| {
             bytes.iter().map(|byte| *byte as char).collect()
         })
+    }
+    pub fn get_timestamp(&self) -> String {
+        match self.timestamp {
+            TimestampResult::None => "1980-01-01 00:00:00.00".to_string(),
+            TimestampResult::Naive(dt) => dt.format("%Y-%m-%d %H:%M:%S.00").to_string(),
+            TimestampResult::Utc(dt) => dt.format("%Y-%m-%d %H:%M:%S.00").to_string(),
+        }
     }
 }
 
