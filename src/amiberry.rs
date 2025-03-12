@@ -59,10 +59,16 @@ impl Emu for Amiberry {
 }
 
 #[test]
-fn test_flatten() {
-    let s1: &[u8] = &[1, 2];
-    let s2: &[u8] = &[3, 4, 5];
-    let v = vec![s1, s2];
-    let res: Vec<&u8> = v.into_iter().flatten().collect();
-    assert_eq!(&res, &[&1, &2, &3, &4, &5]);
+fn test_nocase() {
+    use super::fileinfo::parse_file_info;
+    let mut a = Amiberry::new(PathBuf::new().as_path());
+    let mut lha = delharc::parse_file("tests/res/case.lha").unwrap();
+    let h1 = lha.header();
+    let i1 = parse_file_info(h1).unwrap();
+    let p1 = a.get_host_path(&i1).parent().unwrap().to_path_buf();
+    lha.next_file().unwrap();
+    let h2 = lha.header();
+    let i2 = parse_file_info(h2).unwrap();
+    let p2 = a.get_host_path(&i2).parent().unwrap().to_path_buf();
+    assert_eq!(p1, p2);
 }

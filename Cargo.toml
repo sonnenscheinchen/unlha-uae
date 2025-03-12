@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 delharc = "0.6"
-#percent-encoding = "2.3"
 clap = "4.5"
-#anyhow = "1.0"
+
+#[dev-dependencies]
+#temp-dir = "0.1"
