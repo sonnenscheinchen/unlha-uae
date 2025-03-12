@@ -126,28 +126,18 @@ impl<'a> FileInfo<'a> {
     }
 }
 
-
 #[test]
 fn test_flags() {
     let expected: &[&str; 8] = &[
         //"hsparwed",
-        "---arwed",
-        "----rwed",
-        "----rwe-",
-        "----rw-d",
-        "----r---",
-        "----r-ed",
-        "--p-rwed",
+        "---arwed", "----rwed", "----rwe-", "----rw-d", "----r---", "----r-ed", "--p-rwed",
         "-s--rwed",
-        ];
+    ];
     let mut lha = delharc::parse_file("tests/res/bits.lha").unwrap();
-    //let mut tested = vec![];
     for exp in expected.iter() {
         lha.next_file().unwrap();
         let h = lha.header();
         let i = parse_file_info(h).unwrap();
-        //tested.push(i.get_flags());
         assert_eq!(exp, &i.get_flags())
     }
-    //assert_eq!(*expected, *tested);
 }

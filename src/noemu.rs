@@ -35,4 +35,7 @@ impl Emu for NoEmu {
     fn write_metadata(&mut self, _info: &FileInfo) -> std::io::Result<()> {
         Ok(())
     }
+    fn make_string(slice: &[u8]) -> String {
+        slice.iter().map(|byte| *byte as char).collect()
+    }
 }

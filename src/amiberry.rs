@@ -56,6 +56,28 @@ impl Emu for Amiberry {
 
         Ok(())
     }
+    fn make_string(slice: &[u8]) -> String {
+        let mut result = String::with_capacity(slice.len() * 3); // worst case alloc
+        for &b in slice {
+            match b {
+                0xAD => result.push('\u{2014}'),        // soft hyphen to em dash
+                0x7F => result.push('\u{2592}'),        // DEL to medium shade block
+                0xAA | 0xBA => result.push('\u{FFFD}'), // No underlined small superscript "a" and "o"
+                0xA4 => result.push('\u{20AC}'),        // Euro symbol for "modern" Amigas :-)
+                b'%' => result.push_str("%25"),
+                b'\\' => result.push_str("%5c"),
+                b'*' => result.push_str("%2a"),
+                b'?' => result.push_str("%3f"),
+                b'"' => result.push_str("%22"),
+                b'/' => result.push_str("%2f"),
+                b'|' => result.push_str("%7c"),
+                b'<' => result.push_str("%3c"),
+                b'>' => result.push_str("%3e"),
+                _ => result.push(b as char),
+            }
+        }
+        result
+    }
 }
 
 #[test]
