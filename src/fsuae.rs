@@ -13,17 +13,17 @@ pub struct Fsuae {
 }
 
 impl Fsuae {
-    pub fn new(path: &Path) -> Self {
+    pub fn new(target_dir: PathBuf) -> Self {
         Self {
-            target_dir: path.to_owned(),
+            target_dir,
             dir_cache: HashMap::new(),
         }
     }
 }
 
 impl Emu for Fsuae {
-    fn get_target_dir(&self) -> PathBuf {
-        self.target_dir.clone()
+    fn get_target_dir(&self) -> &Path {
+        &self.target_dir
     }
     fn get_dir_cache(&mut self) -> &mut HashMap<OsString, PathBuf> {
         &mut self.dir_cache
@@ -38,7 +38,7 @@ impl Emu for Fsuae {
         let datetime = info.get_timestamp();
         let comment = info
             .comment
-            .and_then(|c| Some(Self::make_string(c)))
+            .map(Self::make_string)
             .unwrap_or_default();
         let line = format!("{flags} {datetime} {comment}");
         write(&md_path, &line)?;

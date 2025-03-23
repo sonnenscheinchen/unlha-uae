@@ -115,7 +115,7 @@ pub fn parse_file_info(header: &LhaHeader) -> Result<FileInfo> {
     }
 }
 
-impl<'a> FileInfo<'a> {
+impl FileInfo<'_> {
     pub fn get_flags(&self) -> String {
         let bits = self.protection_bits ^ 0b00001111;
         DEFAULT_FLAGS

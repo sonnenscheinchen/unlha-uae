@@ -8,10 +8,10 @@ use delharc::OsType;
 use emutrait::Emu;
 use std::fs::{create_dir_all, File};
 use std::io::{copy, Result};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
-fn uncompress(lha_file: &Path, mut emu: impl Emu) -> Result<()> {
-    let mut lha_reader = delharc::parse_file(lha_file)?;
+fn uncompress(lha_file: PathBuf, mut emu: impl Emu) -> Result<()> {
+    let mut lha_reader = delharc::parse_file(&lha_file)?;
 
     loop {
         let header = lha_reader.header();
@@ -23,7 +23,7 @@ fn uncompress(lha_file: &Path, mut emu: impl Emu) -> Result<()> {
                 "[D] {} {} {}",
                 info.get_flags(),
                 info.get_comment(),
-                path.display()
+                path.strip_prefix(emu.get_target_dir()).unwrap().display()
             );
             create_dir_all(&path)?;
         } else if lha_reader.is_decoder_supported() {
@@ -38,7 +38,7 @@ fn uncompress(lha_file: &Path, mut emu: impl Emu) -> Result<()> {
                 "[F] {} {} {}",
                 info.get_flags(),
                 info.get_comment(),
-                path.display()
+                path.strip_prefix(emu.get_target_dir()).unwrap().display()
             );
             let mut writer = File::create(&path)?;
             copy(&mut lha_reader, &mut writer)?;
@@ -56,8 +56,8 @@ fn uncompress(lha_file: &Path, mut emu: impl Emu) -> Result<()> {
 
 fn main() -> Result<()> {
     let matches = arguments::get_arg_matches();
-    let source = matches.get_one::<PathBuf>("source").unwrap();
-    let target = matches.get_one::<PathBuf>("target").unwrap();
+    let source = matches.get_one::<PathBuf>("source").unwrap().clone();
+    let target = matches.get_one::<PathBuf>("target").unwrap().clone();
 
     println!(
         "Unpacking from {} to {}",

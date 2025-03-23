@@ -2,14 +2,14 @@ use crate::fileinfo::FileInfo;
 use std::collections::HashMap;
 use std::ffi::OsString;
 use std::io::Result;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 // static TCHAR evilchars[NUM_EVILCHARS] = { '%', '\\', '*', '?', '\"', '/', '|', '<', '>' };
 // src/osdep/fsdb_host.cpp
 const EVIL_BYTES: [u8; 9] = [0x25, 0x5c, 0x2a, 0x3f, 0x22, 0x2f, 0x7c, 0x3c, 0x3e];
 
 pub trait Emu {
-    fn get_target_dir(&self) -> PathBuf;
+    fn get_target_dir(&self) -> &Path;
     fn get_dir_cache(&mut self) -> &mut HashMap<OsString, PathBuf>;
     fn get_host_path(&mut self, info: &FileInfo) -> PathBuf {
         let mut path = PathBuf::new();
