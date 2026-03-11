@@ -28,7 +28,7 @@ pub struct FileInfo<'a> {
 }
 
 // old MS-DOS compatible header created with Amiga "lha -H0"
-fn parse_level0(header: &LhaHeader) -> Result<FileInfo> {
+fn parse_level0(header: &'_ LhaHeader) -> Result<FileInfo<'_>> {
     let mut split = header.filename.split(|b| *b == 0);
     let path_bytes = split.next().unwrap();
     let comment = split.next();
@@ -46,7 +46,7 @@ fn parse_level0(header: &LhaHeader) -> Result<FileInfo> {
 }
 
 // the most common (default) header created by Amiga lha 2.15
-fn parse_level1(header: &LhaHeader) -> Result<FileInfo> {
+fn parse_level1(header: &'_ LhaHeader) -> Result<FileInfo<'_>> {
     let mut split = header.filename.split(|b| *b == 0);
     let amiga_file_name = split.next().unwrap();
     let is_directory = if amiga_file_name.is_empty() {
@@ -77,7 +77,7 @@ fn parse_level1(header: &LhaHeader) -> Result<FileInfo> {
 }
 
 // header created with Amiga "lha -H2"
-fn parse_level2(header: &LhaHeader) -> Result<FileInfo> {
+fn parse_level2(header: &'_ LhaHeader) -> Result<FileInfo<'_>> {
     let mut amiga_file_name: Option<&[u8]> = None;
     if let Some(name) = header.iter_extra().find(|e| e[0] == EXT_HEADER_FILENAME) {
         amiga_file_name = Some(&name[1..]);
@@ -103,7 +103,7 @@ fn parse_level2(header: &LhaHeader) -> Result<FileInfo> {
         timestamp: header.parse_last_modified(),
     })
 }
-pub fn parse_file_info(header: &LhaHeader) -> Result<FileInfo> {
+pub fn parse_file_info(header: &'_ LhaHeader) -> Result<FileInfo<'_>> {
     match header.level {
         0 => parse_level0(header),
         1 => parse_level1(header),
