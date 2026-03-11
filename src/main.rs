@@ -20,8 +20,9 @@ fn uncompress(lha_file: PathBuf, mut emu: impl Emu) -> Result<()> {
 
         if header.is_directory() || info.is_directory {
             println!(
-                "[D] {} {} {}",
+                "[D] {} {} {} {}",
                 info.get_flags(),
+                info.get_timestamp(),
                 info.get_comment(),
                 path.strip_prefix(emu.get_target_dir()).unwrap().display()
             );
@@ -35,8 +36,9 @@ fn uncompress(lha_file: PathBuf, mut emu: impl Emu) -> Result<()> {
                 emu.write_metadata(&info)?;
             };
             println!(
-                "[F] {} {} {}",
+                "[F] {} {} {} {}",
                 info.get_flags(),
+                info.get_timestamp(),
                 info.get_comment(),
                 path.strip_prefix(emu.get_target_dir()).unwrap().display()
             );

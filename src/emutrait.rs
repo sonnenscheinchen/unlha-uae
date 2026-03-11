@@ -28,13 +28,13 @@ pub trait Emu {
     fn write_metadata(&mut self, info: &FileInfo) -> Result<()>;
     fn make_string(slice: &[u8]) -> String;
     fn needs_metadata(info: &FileInfo) -> bool {
-        info.comment.is_some() || info.protection_bits != 0 || {
-            for byte in info.path_components.iter().copied().flatten() {
-                if EVIL_BYTES.iter().any(|evil| evil == byte) {
-                    return true;
-                }
-            }
-            return false;
-        }
+        info.comment.is_some()
+            || info.protection_bits != 0
+            || info
+                .path_components
+                .iter()
+                .copied()
+                .flatten()
+                .any(|byte| EVIL_BYTES.contains(byte))
     }
 }
