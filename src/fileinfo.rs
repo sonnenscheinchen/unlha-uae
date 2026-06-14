@@ -1,4 +1,4 @@
-use delharc::header::ext::{EXT_HEADER_FILENAME, EXT_HEADER_PATH};
+use delharc::header::ext::{EXT_HEADER_FILENAME, EXT_HEADER_MSDOS_ATTRS, EXT_HEADER_PATH};
 use delharc::header::TimestampResult;
 use delharc::LhaHeader;
 use std::io::{Error, ErrorKind, Result};
@@ -7,7 +7,7 @@ use std::io::{Error, ErrorKind, Result};
 const EXT_HEADER_LV2_COMMENT: u8 = 0x71; // undocumented!
 const PATH_SEPARATOR: u8 = 0xff;
 
-const DEFAULT_FLAGS: [(char, u16); 8] = [
+const DEFAULT_FLAGS: [(char, u8); 8] = [
     ('h', 1 << 7),
     ('s', 1 << 6),
     ('p', 1 << 5),
@@ -22,7 +22,7 @@ const DEFAULT_FLAGS: [(char, u16); 8] = [
 pub struct FileInfo<'a> {
     pub path_components: Vec<&'a [u8]>,
     pub comment: Option<&'a [u8]>,
-    pub protection_bits: u16,
+    pub protection_bits: u8,
     pub is_directory: bool,
     pub timestamp: TimestampResult,
 }
@@ -39,7 +39,7 @@ fn parse_level0(header: &'_ LhaHeader) -> Result<FileInfo<'_>> {
     Ok(FileInfo {
         path_components,
         comment,
-        protection_bits: header.msdos_attrs.bits(),
+        protection_bits: header.msdos_attrs.bits() as u8,
         is_directory: header.filename.last().unwrap() == &0x5c,
         timestamp: header.parse_last_modified(),
     })
@@ -49,20 +49,25 @@ fn parse_level0(header: &'_ LhaHeader) -> Result<FileInfo<'_>> {
 fn parse_level1(header: &'_ LhaHeader) -> Result<FileInfo<'_>> {
     let mut split = header.filename.split(|b| *b == 0);
     let amiga_file_name = split.next().unwrap();
+    let comment = split.next();
+    let mut protection_bits = header.msdos_attrs.bits() as u8;
+    let mut path_components = vec![];
     let is_directory = if amiga_file_name.is_empty() {
         // weired: Amiga lha uses empy file name
         // for an empty directory instead of -lhd-
-        // TODO: could still be a file name is extra header
         true
     } else {
         false
     };
-    let comment = split.next();
-    let mut path_components = vec![];
-    if let Some(dir) = header.iter_extra().find(|e| e[0] == EXT_HEADER_PATH) {
-        let range = &dir[1..dir.len() - 1];
-        let split = range.split(|b| *b == PATH_SEPARATOR);
-        split.for_each(|subdir| path_components.push(subdir));
+    for extra in header.iter_extra() {
+        match extra {
+            [EXT_HEADER_PATH, data @ ..] => {
+                let split = data.split(|b| *b == PATH_SEPARATOR);
+                split.for_each(|subdir| path_components.push(subdir));
+            }
+            [EXT_HEADER_MSDOS_ATTRS, data @ ..] if data.len() > 0 => protection_bits = data[0],
+            _ => {}
+        }
     }
     if !is_directory {
         path_components.push(amiga_file_name);
@@ -70,7 +75,7 @@ fn parse_level1(header: &'_ LhaHeader) -> Result<FileInfo<'_>> {
     Ok(FileInfo {
         path_components,
         comment,
-        protection_bits: header.msdos_attrs.bits(),
+        protection_bits,
         is_directory,
         timestamp: header.parse_last_modified(),
     })
@@ -79,18 +84,21 @@ fn parse_level1(header: &'_ LhaHeader) -> Result<FileInfo<'_>> {
 // header created with Amiga "lha -H2"
 fn parse_level2(header: &'_ LhaHeader) -> Result<FileInfo<'_>> {
     let mut amiga_file_name: Option<&[u8]> = None;
-    if let Some(name) = header.iter_extra().find(|e| e[0] == EXT_HEADER_FILENAME) {
-        amiga_file_name = Some(&name[1..]);
-    }
     let mut path_components = vec![];
-    if let Some(dir) = header.iter_extra().find(|e| e[0] == EXT_HEADER_PATH) {
-        let range = &dir[1..dir.len() - 1];
-        let split = range.split(|b| *b == PATH_SEPARATOR);
-        split.for_each(|subdir| path_components.push(subdir));
-    }
     let mut comment: Option<&[u8]> = None;
-    if let Some(c) = header.iter_extra().find(|e| e[0] == EXT_HEADER_LV2_COMMENT) {
-        comment = Some(&c[1..]);
+    let mut protection_bits = header.msdos_attrs.bits() as u8;
+
+    for extra in header.iter_extra() {
+        match extra {
+            [EXT_HEADER_FILENAME, data @ ..] => amiga_file_name = Some(data),
+            [EXT_HEADER_LV2_COMMENT, data @ ..] => comment = Some(data),
+            [EXT_HEADER_MSDOS_ATTRS, data @ ..] if data.len() > 0 => protection_bits = data[0],
+            [EXT_HEADER_PATH, data @ ..] => {
+                let split = data.split(|b| *b == PATH_SEPARATOR);
+                split.for_each(|subdir| path_components.push(subdir));
+            }
+            _ => {}
+        }
     }
     if let Some(file) = amiga_file_name {
         path_components.push(file);
@@ -98,8 +106,8 @@ fn parse_level2(header: &'_ LhaHeader) -> Result<FileInfo<'_>> {
     Ok(FileInfo {
         path_components,
         comment,
-        protection_bits: header.msdos_attrs.bits(),
-        is_directory: amiga_file_name.is_none(),
+        protection_bits,
+        is_directory: header.is_directory() || amiga_file_name.is_none(),
         timestamp: header.parse_last_modified(),
     })
 }
