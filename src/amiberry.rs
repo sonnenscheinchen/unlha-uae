@@ -1,15 +1,15 @@
+use crate::emutrait::Emu;
+use crate::fileinfo::FileInfo;
 use std::collections::HashMap;
 use std::ffi::OsString;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use crate::fileinfo::FileInfo;
-use crate::emutrait::Emu;
 
 const UAEFSDB_NAME: &str = "_UAEFSDB.___";
 
 pub struct Amiberry {
     target_dir: PathBuf,
-    dir_cache: HashMap<OsString, PathBuf>
+    dir_cache: HashMap<OsString, PathBuf>,
 }
 
 impl Amiberry {
@@ -57,13 +57,20 @@ impl Emu for Amiberry {
         Ok(())
     }
     fn make_string(slice: &[u8]) -> String {
-        let mut result = String::with_capacity(slice.len() * 3); // worst case alloc
+        let mut result = String::with_capacity(slice.len() * 2);
         for &b in slice {
             match b {
-                0xAD => result.push('\u{2014}'),        // soft hyphen to em dash
-                0x7F => result.push('\u{2592}'),        // DEL to medium shade block
-                0xAA | 0xBA => result.push('\u{FFFD}'), // No underlined small superscript "a" and "o"
-                0xA4 => result.push('\u{20AC}'),        // Euro symbol for "modern" Amigas :-)
+                0xAD => result.push('\u{2014}'), // soft hyphen to em dash
+                0x7F => result.push('\u{2592}'), // DEL to medium shade block
+                0xAA => {
+                    result.push('\u{1D43}');
+                    result.push('\u{0332}')
+                } // underlined small superscript "a"
+                0xBA => {
+                    result.push('\u{1D52}');
+                    result.push('\u{0332}')
+                } // underlined small superscript "o"
+                0xA4 => result.push('\u{20AC}'), // Euro symbol for "modern" Amigas :-)
                 b'%' => result.push_str("%25"),
                 b'\\' => result.push_str("%5c"),
                 b'*' => result.push_str("%2a"),

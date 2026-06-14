@@ -5,7 +5,4 @@ edition = "2021"
 
 [dependencies]
 delharc = "0.6"
-clap = "4.5"
-
-#[dev-dependencies]
-#temp-dir = "0.1"
+clap = "4.6"
